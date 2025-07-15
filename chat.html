@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RespondeAI Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header"><span class="responde">Responde</span><span class="ai">AI</span><span class="chat-title"> Chat</span></div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <form class="chat-input" id="chat-form">
+      <input type="text" id="user-input" placeholder="Digite sua mensagem..." autocomplete="off" required />
+      <button type="submit">Enviar</button>
+    </form>
+  </div>
+  <script>
+    const webhookUrl = 'http://localhost:5678/webhook-test/5489a91b-144b-4ec4-a590-2f4b3f849497'; // Altere para o endpoint do seu n8n
+    const chatMessages = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+
+    function addMessage(text, sender) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'message ' + sender;
+      msgDiv.textContent = text;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const prompt = userInput.value.trim();
+      if (!prompt) return;
+      addMessage(prompt, 'user');
+      userInput.value = '';
+      addMessage('Pensando...', 'bot');
+      try {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
+        });
+        const data = await response.json();
+        // Remove o "Pensando..."
+        chatMessages.removeChild(chatMessages.lastChild);
+        // Ajuste para lidar com resposta JSON simples
+        if (data.output) {
+          addMessage(data.output, 'bot');
+        } else {
+          addMessage(data.resposta || data.result || JSON.stringify(data), 'bot');
+        }
+      } catch (err) {
+        chatMessages.removeChild(chatMessages.lastChild);
+        addMessage('Erro ao obter resposta.', 'bot');
+      }
+    });
+  </script>
+</body>
+</html> 
